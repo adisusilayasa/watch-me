@@ -4,12 +4,14 @@ import Modal from '@mui/material/Modal';
 import TextField from '@mui/material/TextField';
 import { Container, Grid, IconButton } from '@mui/material';
 import Box from '@mui/material/Box';
-import YouTubeEmbed from './YouTubeEmbed'; // Import YouTubeEmbed component
+import YouTubeEmbed from './YouTubeEmbed';
 import SendIcon from '@mui/icons-material/Send';
+import { submitComment } from '../api/apiService';
 
 interface CommentProps {
     username: string;
-    text: string;
+    comment: string;
+    videoID: string;
 }
 
 interface StreamingModalProps {
@@ -17,9 +19,9 @@ interface StreamingModalProps {
     isOpen: boolean;
 }
 
-const Comment: React.FC<CommentProps> = ({ username, text }) => (
+const Comment: React.FC<CommentProps> = ({ username, comment, videoID }) => (
     <div style={{ marginBottom: '10px' }}>
-        <strong>{username}:</strong> {text}
+        <strong>{username}:</strong> {comment}
     </div>
 );
 
@@ -33,6 +35,34 @@ const StreamingModal: React.FC<StreamingModalProps> = ({ videoId, isOpen }) => {
         setIsModalOpen(isOpen);
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isModalOpen) {
+            const socket = new WebSocket(`wss://streamapi-production-d344.up.railway.app/comments/list/${videoId}`);
+
+            socket.addEventListener('message', (event) => {
+                const newCommentData = JSON.parse(event.data); // Parse the incoming JSON data
+
+                // Get the latest comment
+                const latestComment = newCommentData[newCommentData.length - 1];
+
+                if (latestComment) {
+                    const newComment: CommentProps = {
+                        username: latestComment.username,
+                        comment: latestComment.comment,
+                        videoID: latestComment.videoID
+                    };
+
+                    setLiveComments((prevComments) => [...prevComments, newComment]);
+                }
+            });
+
+            return () => {
+                socket.close();
+            };
+        }
+    }, [isModalOpen, videoId]);
+
+
     const toggleModal = () => {
         setIsModalOpen((prevState) => !prevState);
     };
@@ -45,31 +75,24 @@ const StreamingModal: React.FC<StreamingModalProps> = ({ videoId, isOpen }) => {
         setCommentText(event.target.value);
     };
 
-    const handleSubmitComment = () => {
+
+    const handleSubmitComment = async () => {
         if (username && commentText) {
             const newComment: CommentProps = {
                 username,
-                text: commentText,
+                comment: commentText,
+                videoID: videoId,
             };
-            setLiveComments((prevComments) => [...prevComments, newComment]);
-            setUsername('');
-            setCommentText('');
+
+            const isSuccess = await submitComment(newComment);
+
+            if (isSuccess) {
+                // setLiveComments((prevComments) => [...prevComments, newComment]);
+                setUsername('');
+                setCommentText('');
+            }
         }
     };
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (isModalOpen) {
-            timer = setInterval(() => {
-                const newComment: CommentProps = {
-                    username: 'User' + (liveComments.length + 1),
-                    text: 'New comment at ' + new Date().toLocaleTimeString(),
-                };
-                setLiveComments((prevComments) => [...prevComments, newComment]);
-            }, 2000);
-        }
-        return () => clearInterval(timer);
-    }, [isModalOpen, liveComments.length]);
 
     return (
         <Container sx={{ marginTop: '20%', justifyContent: 'center' }}>
@@ -121,8 +144,8 @@ const StreamingModal: React.FC<StreamingModalProps> = ({ videoId, isOpen }) => {
                                                 height: '75%',
                                             }}
                                         >
-                                            {liveComments.map((comment, index) => (
-                                                <Comment key={index} username={comment.username} text={comment.text} />
+                                            {liveComments.map((data, index) => (
+                                                <Comment key={index} username={data.username} comment={data.comment} videoID='' />
                                             ))}
                                         </div>
                                         <div

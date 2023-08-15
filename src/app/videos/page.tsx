@@ -1,28 +1,48 @@
 'use client'
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Button, Grid } from '@mui/material';
-import VideoCard from '../../components/VideoCard';
+// import VideoCard from '../../components/VideoCard';
+import { request } from '../../api/apiService'; // Import the API service instance
+import dynamic from 'next/dynamic'
 
 interface VideoData {
   id: number;
-  videoId: string;
-  title: string;
-  description: string;
+  videoID: string;
+  videoTitle: string;
+  videoDesc: string;
 }
+const VideoCard = dynamic(() => import('../../components/VideoCard'))
+
 
 export default function VideosPage() {
   // Create an array of dummy data
-  const dummyData: VideoData[] = Array.from({ length: 180 }, (_, index) => ({
-    id: index + 1,
-    videoId: `VideoId${index + 1}`,
-    title: `Video Title ${index + 1}`,
-    description: `Description for Video ${index + 1}`,
-  }));
+  // const dummyData: VideoData[] = Array.from({ length: 180 }, (_, index) => ({
+  //   id: index + 1,
+  //   videoId: `VideoId${index + 1}`,
+  //   title: `Video Title ${index + 1}`,
+  //   description: `Description for Video ${index + 1}`,
+  // }));
+
+  const [videos, setVideos] = useState<VideoData[]>([]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      const response = await request('/videos/thumbnail-list');
+      setVideos(response.data as VideoData[]);
+      console.log(response.data)
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    }
+  };
 
   // Paginate the dummy data
   const itemsPerPage = 9;
   const [currentPage, setCurrentPage] = React.useState(1);
-  const totalPages = Math.ceil(dummyData.length / itemsPerPage);
+  const totalPages = Math.ceil(videos.length / itemsPerPage);
 
   // Handle pagination buttons
   const handlePageChange = (page: number) => {
@@ -101,14 +121,14 @@ export default function VideosPage() {
     <Container>
       <h1 style={{ color: '#ffa31a' }}>Watch the Videos</h1>
       <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-        {dummyData
+        {videos
           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
           .map((item) => (
             <Grid key={item.id} xs={4}>
               <VideoCard
-                videoId={item.videoId}
-                title={item.title}
-                description={item.description}
+                videoId={item.videoID}
+                title={item.videoTitle}
+                description={item.videoDesc}
               />
             </Grid>
           ))}

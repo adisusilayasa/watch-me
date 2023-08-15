@@ -7,6 +7,9 @@ const nextConfig = {
       transform: '@mui/icons-material/{{member}}',
     },
   },
+  compiler: {
+    styledComponents: true,
+  },
   images: {
     domains: ['img.youtube.com'], // Add the hostname of external image sources
 

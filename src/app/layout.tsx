@@ -27,24 +27,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeRegistry>
           <AppBar position="fixed">
             <Toolbar sx={{ backgroundColor: '#292929' }}>
-              <DashboardIcon sx={{ color: '#ffa31a', mr: 2, transform: 'translateY(-2px)' }} />
-              <Typography variant="h6" noWrap component="div" color="#ffa31a">
-                WatchMe!
-              </Typography>
+              <Link href="/" passHref>
+                <DashboardIcon sx={{ color: '#ffa31a', mr: 2, transform: 'translateY(-2px)' }} />
+              </Link>
               <Box sx={{ marginLeft: 'auto' }}>
                 {/* Render the navbar links */}
                 {navbarLinks.map(link => (
-                  <Link key={link.label} href={link.href} passHref>
+                  <Link legacyBehavior key={link.label} href={link.href} passHref>
                     <Typography
                       variant="body1"
                       component="a"
                       sx={{
                         color: 'white',
+                        textDecorationStyle: 'none',
                         textDecoration: 'none',
                         marginLeft: 2,
-                        '&:hover': {
-                          textDecoration: 'underline',
-                        },
                       }}
                     >
                       {link.label}

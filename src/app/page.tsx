@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Button, Grid } from '@mui/material';
 import VideoCard from '../components/VideoCard';
-import { Link, Routes, BrowserRouter as Router } from 'react-router-dom'; // Import BrowserRouter as Router
-import apiService from '../api/apiService'; // Import the API service instance
-import { BrowserRouter } from 'react-router-dom'
+import { request } from '../api/apiService';
+import Link from 'next/link';
+
+const PAGE_SIZE = 3; // Number of videos to load per page
 
 interface VideoData {
-    id: number;
     videoID: string;
     videoTitle: string;
     videoDesc: string;
@@ -15,15 +15,22 @@ interface VideoData {
 
 const InitialPage: React.FC = () => {
     const [videos, setVideos] = useState<VideoData[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchVideos();
-    }, []);
+    }, [currentPage]);
 
     const fetchVideos = async () => {
         try {
-            const response = await apiService<VideoData[]>('/videos/thumbnail-list');
-            setVideos(response.data as VideoData[]);
+            const response = await request('/videos/thumbnail-list', {
+                params: {
+                    page: currentPage,
+                    per_page: PAGE_SIZE,
+                },
+            });
+            setVideos(prevVideos => [...prevVideos, ...response.data]);
+            console.log(response.data);
         } catch (error) {
             console.error('Error fetching videos:', error);
         }
@@ -34,7 +41,7 @@ const InitialPage: React.FC = () => {
             <h1 style={{ color: '#ffa31a' }}>Watch the Videos</h1>
             <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
                 {videos.slice(0, 3).map((video) => (
-                    <Grid key={video.id} xs={4}>
+                    <Grid key={video.videoID} item xs={4}>
                         <VideoCard
                             videoId={video.videoID}
                             title={video.videoTitle}
@@ -43,26 +50,23 @@ const InitialPage: React.FC = () => {
                     </Grid>
                 ))}
             </Grid>
-            <BrowserRouter>
-
-                <Button
-                    variant="outlined"
-                    color="primary"
-                    component={Link}
-                    to="/videos"
-                    style={{ marginTop: '20px' }}
-                    sx={{
-                        color: 'white',
-                        backgroundColor: '#292929',
-                        border: 'none',
-                        ':hover': {
-                            outline: 'none', // Remove outline on hover
-                        },
-                    }}
-                >
-                    Show More
-                </Button>
-            </BrowserRouter>
+            <Link legacyBehavior href="/videos">
+                <a>
+                    <button
+                        type="button"
+                        style={{
+                            marginTop: '20px',
+                            color: 'white',
+                            backgroundColor: '#292929',
+                            border: 'none',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Show More
+                    </button>
+                </a>
+            </Link>
         </Container>
     );
 };
